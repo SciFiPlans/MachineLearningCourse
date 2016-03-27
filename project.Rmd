@@ -51,8 +51,8 @@ And convert the variable "classe" to a factor:
 ```{r}
 newtrain$classe <- as.factor(newtrain$classe)
 fin_test$problem_id <- as.factor(fin_test$problem_id)
-dim(newtrain)
-dim(fin_test)
+print(dim(newtrain))
+print(dim(fin_test))
 ```
 
 Since our train dataset is very large compared with our test dataset we can divide our training dataset in training and validation. We will set a seed and split 70-30.
@@ -99,36 +99,38 @@ modelFit <- train(classe ~ ., data = CStrain, method = "rpart", cp = 0.01139253)
 
 Here we can visualize the results of our model
 ```{r}
-plot(modelFit$finalModel, uniform = T, main = "Classification Tree")
+print(plot(modelFit$finalModel, uniform = T, main = "Classification Tree"))
 text(modelFit$finalModel,use.n = T, all = T, cex = .8)
 ```
 
 ###Evaluate in the training dataset
 ```{r}
 ResTrain <- predict(modelFit,CStrain)
-confusionMatrix(ResTrain,CStrain[,"classe"])
+print(confusionMatrix(ResTrain,CStrain[,"classe"]))
 ```
 As we can see in the "confusionMatrix" output the Accuracy is really poor, in fact we can expect our algorithm to wrongly classify roughly about half of the sample.
 
 ###Evaluate in the testing dataset
 ```{r}
 ResTest <- predict(modelFit,CStest)
-confusionMatrix(ResTest,CStest[,"classe"])
+print(confusionMatrix(ResTest,CStest[,"classe"]))
 ```
 No surprises here, at least the Accuracy doesn't get worse.
 
 We can visualize the distribution of True and False prediction. 
 ```{r}
 TF <- ResTest == CStest[,"classe"]
-qplot(roll_belt,pitch_forearm,data = CStest,colour = TF)
+print(qplot(roll_belt,pitch_forearm,data = CStest,colour = TF))
 ```
+
+
 There is a clear pattern that our model should be able to distinguish. Tough luck.
 
 ##Final Model and Prediction
 
 Crossed fingers:
 ```{r}
-modelFit$finalModel
+print(modelFit$finalModel)
 ResFinal <- predict(modelFit,CSftest)
-ResFinal
+print(ResFinal)
 ```
