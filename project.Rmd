@@ -1,0 +1,134 @@
+---
+title: "Machine Learning Project"
+author: "Luis"
+date: "March 25, 2016"
+output: html_document
+---
+
+##Introduction
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
+
+##Objective
+
+The goal of the project is to predict the manner in which the users did the exercise. This is the "classe" variable in the training set. We will also use the prediction model to predict 20 different test cases. 
+
+##Data
+The testing and training datasets are available from here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data is loaded from these urls:
+```{r}
+library(caret)
+url1 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+url2 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+training <- read.csv(url1)
+ftesting <- read.csv(url2)
+```
+
+##Data Preprocessing
+
+###Selection of variables
+We will consider potential candidates to be predictor variables among the "belt","arm","dumbbell" and "forearm" variables without NA's or empty values in their records.
+
+```{r}
+VarsWithNA <- sapply(training, function (x) any(is.na(x) | x == ""))
+PotPred <- !VarsWithNA & grepl("belt|[^(fore)]arm|dumbbell|forearm", names(training))
+PredNames <- names(training)[PotPred]
+print(PredNames)
+```
+
+Now we will create a new dataset as a subset of the training data including only the potential predictors plus the variable to predict. We will mirror all procedures in our testing dataset.
+
+```{r}
+newtrain <- training[,c("classe",PredNames)]
+fin_test <- ftesting[,c("problem_id",PredNames)]
+```
+
+And convert the variable "classe" to a factor:
+
+```{r}
+newtrain$classe <- as.factor(newtrain$classe)
+fin_test$problem_id <- as.factor(fin_test$problem_id)
+dim(newtrain)
+dim(fin_test)
+```
+
+Since our train dataset is very large compared with our test dataset we can divide our training dataset in training and validation. We will set a seed and split 70-30.
+
+```{r}
+set.seed(5678)
+inTrain <- createDataPartition(newtrain$classe, p=0.7, list=FALSE)
+train1 <- newtrain[inTrain,]
+test1 <- newtrain[-inTrain,]
+```
+
+###Data Standardarizing
+
+Before starting with the model fitting, we standarize de datasets: centering and scaling of all datasets (training, testing, final test) using the values from the training dataset as reference.
+
+```{r}
+CSobj <- preProcess(train1[,-1], method = c("center","scale"))
+CStrain <- predict(CSobj,train1)
+CStest  <- predict(CSobj,test1)
+CSftest <- predict(CSobj,fin_test)
+```
+
+##Model Fitting
+
+The fact that we are working in an old laptop and the deadline is today impedes us regarding the use of "fancier" (and more adequate) algorithms like random forest ("rf") or boosting (i.e. "gbm"), we will have to content ourselves with a simple forest "rpart" model, pay no mind to cross-validation either. At least we can tune our model, let's start with that: we create a function based on the "trainControl" in order to tune the only parameter for the "rpart" algorithm: the "cp" complexity parameter. 
+
+```{r}
+folds=10
+repeats=10
+fitControl <- trainControl(method="repeatedcv",number=folds,repeats=repeats, classProbs=T,
+allowParallel=T, summaryFunction=defaultSummary)
+
+train.rpart <- train(classe ~ ., data=CStrain, method="rpart", tuneLength=10, trControl=fitControl)
+print(train.rpart)
+```
+
+
+The best cp value is "cp = 0.01139253". We will continue by training the model with our training data:
+```{r}
+modelFit <- train(classe ~ ., data = CStrain, method = "rpart", cp = 0.01139253)
+```
+
+###Plotting the result tree
+
+Here we can visualize the results of our model
+```{r}
+plot(modelFit$finalModel, uniform = T, main = "Classification Tree")
+text(modelFit$finalModel,use.n = T, all = T, cex = .8)
+```
+
+###Evaluate in the training dataset
+```{r}
+ResTrain <- predict(modelFit,CStrain)
+confusionMatrix(ResTrain,CStrain[,"classe"])
+```
+As we can see in the "confusionMatrix" output the Accuracy is really poor, in fact we can expect our algorithm to wrongly classify roughly about half of the sample.
+
+###Evaluate in the testing dataset
+```{r}
+ResTest <- predict(modelFit,CStest)
+confusionMatrix(ResTest,CStest[,"classe"])
+```
+No surprises here, at least the Accuracy doesn't get worse.
+
+We can visualize the distribution of True and False prediction. 
+```{r}
+TF <- ResTest == CStest[,"classe"]
+qplot(roll_belt,pitch_forearm,data = CStest,colour = TF)
+```
+There is a clear pattern that our model should be able to distinguish. Tough luck.
+
+##Final Model and Prediction
+
+Crossed fingers:
+```{r}
+modelFit$finalModel
+ResFinal <- predict(modelFit,CSftest)
+ResFinal
+```
