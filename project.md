@@ -85,7 +85,7 @@ And convert the variable "classe" to a factor:
 ```r
 newtrain$classe <- as.factor(newtrain$classe)
 fin_test$problem_id <- as.factor(fin_test$problem_id)
-dim(newtrain)
+print(dim(newtrain))
 ```
 
 ```
@@ -93,7 +93,7 @@ dim(newtrain)
 ```
 
 ```r
-dim(fin_test)
+print(dim(fin_test))
 ```
 
 ```
@@ -184,7 +184,18 @@ modelFit <- train(classe ~ ., data = CStrain, method = "rpart", cp = 0.01139253)
 Here we can visualize the results of our model
 
 ```r
-plot(modelFit$finalModel, uniform = T, main = "Classification Tree")
+print(plot(modelFit$finalModel, uniform = T, main = "Classification Tree"))
+```
+
+```
+## $x
+## [1] 3.5625 2.1250 1.0000 3.2500 2.5000 2.0000 3.0000 4.0000 5.0000
+## 
+## $y
+## [1] 1.25 1.00 0.75 0.75 0.50 0.25 0.25 0.50 1.00
+```
+
+```r
 text(modelFit$finalModel,use.n = T, all = T, cex = .8)
 ```
 
@@ -194,7 +205,7 @@ text(modelFit$finalModel,use.n = T, all = T, cex = .8)
 
 ```r
 ResTrain <- predict(modelFit,CStrain)
-confusionMatrix(ResTrain,CStrain[,"classe"])
+print(confusionMatrix(ResTrain,CStrain[,"classe"]))
 ```
 
 ```
@@ -236,7 +247,7 @@ As we can see in the "confusionMatrix" output the Accuracy is really poor, in fa
 
 ```r
 ResTest <- predict(modelFit,CStest)
-confusionMatrix(ResTest,CStest[,"classe"])
+print(confusionMatrix(ResTest,CStest[,"classe"]))
 ```
 
 ```
@@ -278,10 +289,12 @@ We can visualize the distribution of True and False prediction.
 
 ```r
 TF <- ResTest == CStest[,"classe"]
-qplot(roll_belt,pitch_forearm,data = CStest,colour = TF)
+print(qplot(roll_belt,pitch_forearm,data = CStest,colour = TF))
 ```
 
 ![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12-1.png) 
+
+
 There is a clear pattern that our model should be able to distinguish. Tough luck.
 
 ##Final Model and Prediction
@@ -289,7 +302,7 @@ There is a clear pattern that our model should be able to distinguish. Tough luc
 Crossed fingers:
 
 ```r
-modelFit$finalModel
+print(modelFit$finalModel)
 ```
 
 ```
@@ -311,7 +324,7 @@ modelFit$finalModel
 
 ```r
 ResFinal <- predict(modelFit,CSftest)
-ResFinal
+print(ResFinal)
 ```
 
 ```
